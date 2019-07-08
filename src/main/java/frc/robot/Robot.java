@@ -9,7 +9,6 @@ package frc.robot;
 
 import java.util.Map;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
@@ -20,14 +19,10 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
-import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-//import frc.robot.classes.PixyLineFollow;
-import frc.robot.classes.BlinkIn;
-//import frc.robot.classes.Camera;
 import frc.robot.classes.SwerveDrive;
 import frc.robot.classes.SwerveGyroAdapter;
 
@@ -54,15 +49,8 @@ public class Robot extends TimedRobot {
   // Create the Gyro
   AHRS ahrs;
 
-  // Create BlinkIn Spark
-  Spark m_blinkInController;
-
   //Create Custom Classes
   SwerveDrive m_drive;
-
-  //PixyLineFollow m_pixy;
-  // Camera m_camera;
-  BlinkIn m_blinkIn;
 
   //Create Variables
   double trackWidth = 20.625;
@@ -80,8 +68,8 @@ public class Robot extends TimedRobot {
   //Create Shuffleboard Tabs
   private static ShuffleboardTab SwerveTab = Shuffleboard.getTab("Swerve");
   private static ShuffleboardTab Joysticks = Shuffleboard.getTab("Joysticks");
-  private static ShuffleboardTab PDP = Shuffleboard.getTab("PDP");
   private static ShuffleboardTab SwerveEncoders = Shuffleboard.getTab("SwerveEncoders");
+  private static ShuffleboardTab SubSystems = Shuffleboard.getTab("SubSystems");
 
   //#region NetworkEntries
   //Create Network Table Entries
@@ -293,6 +281,19 @@ public class Robot extends TimedRobot {
                                 .withSize(4, 2)
                                 .withPosition(0, 6)
                                 .getEntry();
+
+  static NetworkTableEntry shuffleboardGyroYaw = SubSystems
+                                .add("Gyro - Yaw", 0)
+                                .withWidget(BuiltInWidgets.kTextView)
+                                .getEntry();  
+  static NetworkTableEntry shuffleboardGyroCompass = SubSystems
+                                .add("Gyro - Compass Heading", 0)
+                                .withWidget(BuiltInWidgets.kTextView)
+                                .getEntry();  
+  static NetworkTableEntry shuffleboardGyroFused = SubSystems
+                                .add("Gyro - Fused Heading", 0)
+                                .withWidget(BuiltInWidgets.kTextView)
+                                .getEntry();
                                 
 
   static String ShuffleboardLogString;
@@ -335,16 +336,9 @@ public class Robot extends TimedRobot {
     } catch (Exception ex) {
       DriverStation.reportError("Error instantiating navX MXP:  " + ex.getMessage(), true);
     }
-    
-    // Initialize BlinkIn Spark
-    //TODO: Fix this so lights work
-    //m_blinkInController = new Spark(5);
 
     // Initialize Custom Classes
     m_drive = new SwerveDrive(m_FrontLeftSteering, m_FrontRightSteering, m_BackLeftSteering, m_BackRightSteering, m_FrontLeftDrive, m_FrontRightDrive, m_BackLeftDrive, m_BackRightDrive);
-    //m_pixy = new PixyLineFollow();
-    // m_camera = new Camera();
-    m_blinkIn = new BlinkIn(m_blinkInController, -.99);
 
     //Get shuffleboard tab
     SwerveTab.add("Front Left Swerve Angle Gyro", frontLeftGyroAdapter)
@@ -409,6 +403,17 @@ public class Robot extends TimedRobot {
     frontRightEncoderDifference.setDouble(m_FrontRightSteering.getSelectedSensorPosition() - m_drive.frontRightTargetPosition);
     backLeftEncoderDifference.setDouble(m_BackLeftSteering.getSelectedSensorPosition() - m_drive.backLeftTargetPosition);
     backRightEncoderDifference.setDouble(m_BackRightSteering.getSelectedSensorPosition() - m_drive.backRightTargetPosition);
+
+    networkTableEntryJoystickX.setDouble(m_joystickLeft.getRawAxis(0));
+    networkTableEntryJoystickY.setDouble(m_joystickLeft.getRawAxis(1));
+    networkTableEntryJoystickZ.setDouble(m_joystickRight.getRawAxis(0));
+
+    networkTableEntryFWD.setDouble(m_drive.FWD);
+    networkTableEntryRCW.setDouble(m_drive.RCW);
+    networkTableEntrySTR.setDouble(m_drive.STR);
+  
+    shuffleboardGyroFused.setDouble(ahrs.getFusedHeading());
+    shuffleboardGyroYaw.setDouble(ahrs.getYaw());
   }
 
   /**
@@ -431,11 +436,10 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
-    fieldCentric = false;
-
+    //TODO: Uncomment for gyro
     try {
       // Get gryo angle
-      gyroAngle = ahrs.getYaw();
+      gyroAngle = ahrs.getFusedHeading();
       //fieldCentric is true only if you can recieve a gyro angle
       fieldCentric = true;
     } catch (Exception e) {
@@ -445,51 +449,34 @@ public class Robot extends TimedRobot {
     }
   
     // Run Drive
-    networkTableEntryJoystickX.setDouble(m_joystickLeft.getRawAxis(0));
-    networkTableEntryJoystickY.setDouble(m_joystickLeft.getRawAxis(1));
-    networkTableEntryJoystickZ.setDouble(m_joystickRight.getRawAxis(0));
-
-    networkTableEntryFWD.setDouble(m_drive.FWD);
-    networkTableEntryRCW.setDouble(m_drive.RCW);
-    networkTableEntrySTR.setDouble(m_drive.STR);
-
     //if you change joysticks or want to pull different Axis change them here
     double strafe = m_joystickLeft.getRawAxis(0);
     double forward = m_joystickLeft.getRawAxis(1);
     double rotateClockwise = m_joystickRight.getRawAxis(0);
-    // if(isSimulation())
-    // {
-    //   /*
-    //   Using andrew's cad mouse to simuolate joystick when simulating robot on his Surface
-    //   Order of joystick input:
-    //   Axis 5 - Rotate
-    //   Axis 1 - Forward
-    //   Axis 0 - Strafe
-    //   */
-     
-    //   // m_drive.drive(m_joystickRight.getRawAxis(0), m_joystickLeft.getRawAxis(1), m_joystickLeft.getRawAxis(0), wheelBase, trackWidth, fieldCentric, gyroAngle, m_FrontLeftSteering.getSelectedSensorPosition(), m_FrontRightSteering.getSelectedSensorPosition(), m_BackLeftSteering.getSelectedSensorPosition(), m_BackRightSteering.getSelectedSensorPosition());
-    //   // m_drive.drive(/*turn*/ 0, /*Forward*/ m_joystickLeft.getRawAxis(0), /*Strafe*/ 0, wheelBase, trackWidth, fieldCentric, gyroAngle, m_FrontLeftSteering.getSelectedSensorPosition(), m_FrontRightSteering.getSelectedSensorPosition(), m_BackLeftSteering.getSelectedSensorPosition(), m_BackRightSteering.getSelectedSensorPosition());
-    // }
-    // else
-    // {
-      if(m_joystickLeft.getRawButton(1) ) //drive left
-      {
-        m_drive.drive(0, 0, -1, wheelBase, trackWidth, false, gyroAngle, m_FrontLeftSteering.getSelectedSensorPosition(), m_FrontRightSteering.getSelectedSensorPosition(), m_BackLeftSteering.getSelectedSensorPosition(), m_BackRightSteering.getSelectedSensorPosition());
-      }
-      else if( m_joystickRight.getRawButton(1)) //drive right
-      {
-        m_drive.drive(0, 0, 1, wheelBase, trackWidth, false, gyroAngle, m_FrontLeftSteering.getSelectedSensorPosition(), m_FrontRightSteering.getSelectedSensorPosition(), m_BackLeftSteering.getSelectedSensorPosition(), m_BackRightSteering.getSelectedSensorPosition());
-      }
-      else //use Joystick values
-      {
-        m_drive.drive(rotateClockwise, forward, strafe, wheelBase, trackWidth, fieldCentric, 90, m_FrontLeftSteering.getSelectedSensorPosition(), m_FrontRightSteering.getSelectedSensorPosition(), m_BackLeftSteering.getSelectedSensorPosition(), m_BackRightSteering.getSelectedSensorPosition());
-      }
-    // }
 
+    shuffleboardGyroCompass.setDouble(gyroAngle);
 
-
-
-
+    if(m_joystickLeft.getRawButton(1))
+    {
+      fieldCentric = true;
+    }
+    else
+    {
+      fieldCentric = false;
+    }
+    m_drive.drive(
+      rotateClockwise, 
+      forward, 
+      strafe, 
+      wheelBase, 
+      trackWidth, 
+      fieldCentric, 
+      gyroAngle, 
+      m_FrontLeftSteering.getSelectedSensorPosition(), 
+      m_FrontRightSteering.getSelectedSensorPosition(), 
+      m_BackLeftSteering.getSelectedSensorPosition(), 
+      m_BackRightSteering.getSelectedSensorPosition());
+  
     //using a Gyro Widget on the Shuffleboard, have to convert our angle 180 -> -180 to 0 - 360
     //then put the converted angle into the Gyro Adapter widget.
     frontLeftGyroAdapter.setAngle(m_drive.ShuffleBoardAngleConversion(m_drive.frontLeftAngle));

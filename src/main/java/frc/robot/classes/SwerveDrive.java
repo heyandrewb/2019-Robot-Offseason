@@ -63,6 +63,8 @@ public class SwerveDrive {
 
     public boolean isZero = false;
 
+    public double degreesToRadians = Math.PI/180.00;
+
     /**
      * Configures the drivebase with Steering TalonSRXs and Speed Controller Drives
      * @param motorFrontLeftSteering The front left steering TalonSRX
@@ -194,7 +196,6 @@ public class SwerveDrive {
      */
     public void drive(double RCW_Joystick, double FWD_Joystick, double STR_Joystick, double wheelBase, double trackWidth, boolean fieldCentric, double gyroAngle, int FrontLeftEncoder, int FrontRightEncoder, int BackLeftEncoder, int BackRightEncoder)
     {
-        fieldCentric = false;
         if(-FWD_Joystick > defaultDeadzone || -FWD_Joystick < -defaultDeadzone) {
             FWD = -FWD_Joystick;
         } 
@@ -214,6 +215,7 @@ public class SwerveDrive {
 
         if(fieldCentric)
         {
+            gyroAngle *= degreesToRadians;
             double temp = FWD * Math.cos(gyroAngle) + STR * Math.sin(gyroAngle);
             STR = -FWD * Math.sin(gyroAngle) + STR * Math.cos(gyroAngle);
             FWD = temp;

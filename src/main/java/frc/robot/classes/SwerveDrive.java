@@ -45,6 +45,11 @@ public class SwerveDrive {
     public double backLeftTargetPosition = 0;
     public double backRightTargetPosition = 0;
 
+    public double frontLeftCurrentPosition = 0;
+    public double frontRightCurrentPosition = 0;
+    public double backLeftCurrentPosition = 0;
+    public double backRightCurrentPosition = 0;
+
     public double frontRightSpeed = 0; 
     public double frontLeftSpeed = 0;
     public double backLeftSpeed = 0;
@@ -64,6 +69,8 @@ public class SwerveDrive {
     public boolean isZero = false;
 
     public double degreesToRadians = Math.PI/180.00;
+    public double degreesToTicks = 1024.0/360.0;
+    public double ticksToDegrees = 360.0/1024.0;
 
     /**
      * Configures the drivebase with Steering TalonSRXs and Speed Controller Drives
@@ -268,7 +275,7 @@ public class SwerveDrive {
         frontRightTargetPosition = -1 * ((ConvertAngleToPosition(frontRight360Angle) + Math.abs(frontRightOffset)) % 1024);
         backLeftTargetPosition = -1 * ((ConvertAngleToPosition(backLeft360Angle) + Math.abs(backLeftOffset)) % 1024);
         backRightTargetPosition = -1 * ((ConvertAngleToPosition(backRight360Angle) + Math.abs(backRightOffset)) % 1024);
-
+        
         m_SrxFrontRightSteering.set(ControlMode.Position, frontRightTargetPosition);
         m_SrxFrontLeftSteering.set(ControlMode.Position, frontLeftTargetPosition);
         m_SrxBackLeftSteering.set(ControlMode.Position, backLeftTargetPosition);

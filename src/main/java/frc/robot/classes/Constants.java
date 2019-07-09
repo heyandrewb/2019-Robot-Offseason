@@ -30,7 +30,7 @@ public class Constants {
 	true:   1023 -> 0
 	false:  1023 -> 1024
 	*/
-	public static boolean kNonContinuousFeedback = true;
+	public static boolean kNonContinuousFeedback = false;
 
 	/*The amount of allowed error in the pid loop*/
 	public static int kAlloweedError = 7;

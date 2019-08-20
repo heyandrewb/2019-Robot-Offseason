@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 /**
  * This class runs the subsystems for the 2019 game robot.
@@ -20,20 +22,16 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 public class SubSystems {
 
     // Create Talon Speed Controllers
-    private Talon m_climbFront;
-    private Talon m_climbBack;
-    private Talon m_climbDrive;
+    private Talon m_armRaise;
+    private Talon m_armLower;
+    private Talon m_lowerIntakeRoller;
 
-    // Create Spark Speed Controller
-    private Spark m_lift;
-
-    // Create Talon Intake Controller
-    private Talon m_intake;
+    // Create Spark Max Speed Controller
+    private CANSparkMax m_topIntakeRoller;
 
     // Create Solenoid
-    private Solenoid m_hatcher;
-    private Solenoid m_hatcherDrop;
-    private Solenoid m_hatcherLift;
+    private Solenoid m_hatcherExtend;
+    private Solenoid m_hatcherGrab;
 
     // Create Configurable Values
     public NetworkTableEntry m_deadzone;
@@ -50,7 +48,7 @@ public class SubSystems {
      * @param Hatcher The solenoid for the Hatcher system
      * @param defaultDeadzone The default for Switchboard deadzone value
      */
-    public SubSystems(Talon ClimbFront, Talon ClimbBack, Talon ClimbDrive, Spark Lift, Talon Intake, Solenoid Hatcher, Solenoid HatcherDrop, Solenoid HatcherLift, double defaultDeadzone, double defaultClimbOffset)
+    public SubSystems(Talon ArmRaise, Talon ArmLower, Talon LowerIntakeRoller, CANSparkMax TopIntakeRoller, Talon Intake, Solenoid Hatcher, Solenoid HatcherDrop, Solenoid HatcherLift, double defaultDeadzone, double defaultClimbOffset)
     {
         m_climbFront = ClimbFront;
         m_climbBack = ClimbBack;
@@ -66,56 +64,13 @@ public class SubSystems {
         m_encoderValue = Shuffleboard.getTab("SubSystems").add("Encoder Value", 0).withWidget(BuiltInWidgets.kTextView).withPosition(2, 4).withSize(2, 3).getEntry();
     }
 
-    /**
-     * This runs the climb motors
-     * @param joystickLeftY The left joystick value
-     * @param joystickRightY The right joystick value
-     * @param joystickDriveY The drive joystick value
-     */
-    public void climber(double joystickLeftY, double joystickRightY, double joystickDriveY, boolean joystickButton)
-    {
-        // Impliment Deadzone
-        if(joystickLeftY < m_deadzone.getDouble(.02) && joystickLeftY > -m_deadzone.getDouble(.02))
-        {
-            joystickLeftY = 0;
-        }
-        if(joystickRightY < m_deadzone.getDouble(.02) && joystickRightY > -m_deadzone.getDouble(.02))
-        {
-            joystickRightY = 0;
-        }
-        if(joystickDriveY < m_deadzone.getDouble(.02) && joystickDriveY > -m_deadzone.getDouble(.02))
-        {
-            joystickDriveY = 0;
-        }
 
-        // Square joystick values
-        double updatedLeft = joystickLeftY * Math.abs(joystickLeftY);
-        double updatedRight = joystickRightY * Math.abs(joystickRightY);
-        double updatedDrive = joystickDriveY * Math.abs(joystickDriveY);
-
-        if(joystickButton)
-        {
-            // Set front values
-            m_climbFront.set(updatedLeft * m_climbOffset.getDouble(0));
-            // Set back values
-            m_climbBack.set(updatedLeft);
-        }
-        else
-        {
-            // Set front values
-            m_climbFront.set(updatedLeft);
-            // Set back values
-            m_climbBack.set(updatedRight);
-        }
-        // Set drive values
-        m_climbDrive.set(updatedDrive);
-    }
 
     /**
-     * Runs the lift motors
-     * @param joystickY The lift joystick value
+     * Runs the Cargo Arm motors
+     * @param joystickY The arm joystick value
      */
-    public void lift(double joystickY, double encoderValue)
+    public void moveCargoArm(double joystickY, double encoderValue)
     {
         // Impliment Deadzone
         if(joystickY < m_deadzone.getDouble(.02) && joystickY > -m_deadzone.getDouble(.02))
@@ -133,71 +88,11 @@ public class SubSystems {
     }
 
     /**
-     * Runs the intake motor
-     * @param trigerLeft The trigger to intake
-     * @param triggerRight The trigger to output
-     */
-    public void intake(double triggerLeft, double triggerRight)
-    {
-        if(triggerLeft > m_deadzone.getDouble(.02))
-        {
-            m_intake.set(-triggerLeft);
-        }
-        else if(triggerRight > m_deadzone.getDouble(.02))
-        {
-            m_intake.set(triggerRight);
-        }
-        else
-        {
-            m_intake.set(0);
-        }
-    }
-
-    /**
-     * Runs the hatcher solenoid
-     * @param buttonKick The button to activate the kicker solenoid
-     * @param button
-     */
-    public void hatcher(Boolean buttonKick, Boolean buttonDrop, Boolean buttonLift)
-    {
-      m_hatcher.set(buttonKick);
-      m_hatcherDrop.set(buttonDrop);
-      m_hatcherLift.set(buttonLift);
-    }
-
-    /**
-     * Zeros all climb motors
-     */
-    public void climbZero()
-    {
-    m_climbFront.set(0);
-    m_climbBack.set(0);
-    m_climbDrive.set(0);
-    }
-
-    /**
-     * Zeros all lift motors
-     */
-    public void liftZero()
-    {
-        m_lift.set(0);
-    }
-
-    /**
-     * Zeros intake motor
-     */
-    public void intakeZero()
-    {
-        m_intake.set(0);
-    }
-
-    /**
      * Zeros all hatcher solenoids
      */
     public void hatcherZero()
     {
-        m_hatcher.set(false);
-        m_hatcherDrop.set(false);
-        m_hatcherLift.set(false);
+        m_hatcherExtend.set(false);
+        m_hatcherGrab.set(false);
     }
 }

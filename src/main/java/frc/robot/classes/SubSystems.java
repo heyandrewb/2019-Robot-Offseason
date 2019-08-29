@@ -8,7 +8,6 @@
 package frc.robot.classes;
 
 import edu.wpi.first.wpilibj.Talon;
-import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -32,11 +31,11 @@ public class SubSystems {
     // Create Solenoid
     private Solenoid m_hatcherExtend;
     private Solenoid m_hatcherGrab;
+    
+    private Solenoid m_rearClimb;
 
     // Create Configurable Values
     public NetworkTableEntry m_deadzone;
-    public NetworkTableEntry m_climbOffset;
-    public NetworkTableEntry m_encoderValue;
 
     /**
      * This initializes all of the motors and base settings for the robot subsystems
@@ -48,23 +47,26 @@ public class SubSystems {
      * @param Hatcher The solenoid for the Hatcher system
      * @param defaultDeadzone The default for Switchboard deadzone value
      */
-    public SubSystems(Talon ArmRaise, Talon ArmLower, Talon LowerIntakeRoller, CANSparkMax TopIntakeRoller, Talon Intake, Solenoid Hatcher, Solenoid HatcherDrop, Solenoid HatcherLift, double defaultDeadzone, double defaultClimbOffset)
+    public SubSystems(Talon ArmRaise, Talon ArmLower, Talon LowerIntakeRoller, CANSparkMax TopIntakeRoller, Solenoid HatcherGrab, Solenoid HatcherExtend, Solenoid RearClimb)
     {
-        m_climbFront = ClimbFront;
-        m_climbBack = ClimbBack;
-        m_climbDrive = ClimbDrive;
-        m_lift = Lift;
-        m_intake = Intake;
-        m_hatcher = Hatcher;
-        m_hatcherDrop = HatcherDrop;
-        m_hatcherLift = HatcherLift;
+        m_armRaise = ArmRaise;
+        m_armLower = ArmLower;
 
-        m_deadzone = Shuffleboard.getTab("SubSystems").add("Joystick Deadzone", defaultDeadzone).withWidget(BuiltInWidgets.kNumberSlider).withPosition(2, 1).withSize(2, 1).getEntry();
-        m_climbOffset = Shuffleboard.getTab("SubSystems").add("Climb Offset", defaultClimbOffset).withWidget(BuiltInWidgets.kNumberSlider).withPosition(2, 2).withSize(2, 1).getEntry();
-        m_encoderValue = Shuffleboard.getTab("SubSystems").add("Encoder Value", 0).withWidget(BuiltInWidgets.kTextView).withPosition(2, 4).withSize(2, 3).getEntry();
-    }
+        m_lowerIntakeRoller = LowerIntakeRoller;
+        m_topIntakeRoller = TopIntakeRoller;
+        
+        m_hatcherGrab = HatcherGrab;
+        m_hatcherExtend = HatcherExtend;
 
+        m_rearClimb = RearClimb;
 
+        m_deadzone = Shuffleboard.getTab("SubSystems")
+            .add("Joystick Deadzone", 0.05)
+            .withWidget(BuiltInWidgets.kNumberSlider)
+            .withPosition(2, 1)
+            .withSize(2, 1)
+            .getEntry();
+       }
 
     /**
      * Runs the Cargo Arm motors
@@ -80,11 +82,6 @@ public class SubSystems {
 
         // Square joystick values
         double updatedY = joystickY * Math.abs(joystickY);
-
-        // Set motor value
-        m_lift.set(updatedY);
-
-        m_encoderValue.setDouble(encoderValue);
     }
 
     /**

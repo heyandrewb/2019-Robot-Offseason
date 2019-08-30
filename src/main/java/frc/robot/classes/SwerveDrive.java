@@ -266,10 +266,10 @@ public class SwerveDrive {
         backLeft360Angle = ConvertTo360Angle(backLeftAngle);
         backRight360Angle = ConvertTo360Angle(backRightAngle);
 
-        m_FrontLeftDrive.set(ControlMode.PercentOutput, -frontLeftSpeed*.25);
-        m_FrontRightDrive.set(ControlMode.PercentOutput, -frontRightSpeed*.25);
-        m_BackLeftDrive.set(ControlMode.PercentOutput, backLeftSpeed*.25);
-        m_BackRightDrive.set(ControlMode.PercentOutput, -backRightSpeed*.25);
+        m_FrontLeftDrive.set(ControlMode.PercentOutput, -frontLeftSpeed*.75);
+        m_FrontRightDrive.set(ControlMode.PercentOutput, -frontRightSpeed*.75);
+        m_BackLeftDrive.set(ControlMode.PercentOutput, backLeftSpeed*.75);
+        m_BackRightDrive.set(ControlMode.PercentOutput, -backRightSpeed*.75);
 
         frontLeftTargetPosition = -1 * ((ConvertAngleToPosition(frontLeft360Angle) + Math.abs(frontLeftOffset)) % 1024);
         frontRightTargetPosition = -1 * ((ConvertAngleToPosition(frontRight360Angle) + Math.abs(frontRightOffset)) % 1024);
@@ -288,6 +288,14 @@ public class SwerveDrive {
         m_FrontRightDrive.set(ControlMode.PercentOutput, 0);
         m_BackLeftDrive.set(ControlMode.PercentOutput, 0);
         m_BackRightDrive.set(ControlMode.PercentOutput, 0);
+    }
+
+    public void defensePosition()
+    {
+        m_SrxFrontRightSteering.set(ControlMode.Position, -378);
+        m_SrxFrontLeftSteering.set(ControlMode.Position, -803);
+        m_SrxBackLeftSteering.set(ControlMode.Position, -606);
+        m_SrxBackRightSteering.set(ControlMode.Position, -202);
     }
 
     public double ConvertTo360Angle(double Angle)

@@ -10,24 +10,25 @@ package frc.robot;
 import java.util.Map;
 
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.ctre.phoenix.motorcontrol.can.VictorSPX;
-import com.revrobotics.CANSparkMax;
-import edu.wpi.first.wpilibj.Talon;
-
 import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.Solenoid;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import frc.robot.classes.SubSystems;
 import frc.robot.classes.SwerveDrive;
 import frc.robot.classes.SwerveGyroAdapter;
-import frc.robot.classes.SubSystems;
+import frc.robot.classes.Vision;
 
 public class Robot extends TimedRobot {
 
@@ -41,10 +42,10 @@ public class Robot extends TimedRobot {
   TalonSRX m_FrontRightSteering;
   TalonSRX m_BackLeftSteering;
   TalonSRX m_BackRightSteering;
-  VictorSPX m_FrontLeftDrive;
-  VictorSPX m_FrontRightDrive;
-  VictorSPX m_BackLeftDrive;
-  VictorSPX m_BackRightDrive;
+  CANSparkMax m_FrontLeftDrive;
+  CANSparkMax m_FrontRightDrive;
+  CANSparkMax m_BackLeftDrive;
+  CANSparkMax m_BackRightDrive;
 
   // Create Sub System Motors
   Talon m_armRaise;
@@ -67,8 +68,6 @@ public class Robot extends TimedRobot {
   SubSystems m_SubSystems;
 
   // Create Variables
-  double trackWidth = 20.625;
-  double wheelBase = 20.625;
   boolean fieldCentric = false;
   double gyroAngle = 0;
   boolean shuffleboardRecording = false;
@@ -215,10 +214,10 @@ public class Robot extends TimedRobot {
     m_FrontRightSteering = new TalonSRX(3);
     m_BackLeftSteering = new TalonSRX(2);
     m_BackRightSteering = new TalonSRX(0);
-    m_FrontLeftDrive = new VictorSPX(7);
-    m_FrontRightDrive = new VictorSPX(4);
-    m_BackLeftDrive = new VictorSPX(5);
-    m_BackRightDrive = new VictorSPX(6);
+    m_FrontLeftDrive = new CANSparkMax(7, MotorType.kBrushless);
+    m_FrontRightDrive = new CANSparkMax(4, MotorType.kBrushless);
+    m_BackLeftDrive = new CANSparkMax(5, MotorType.kBrushless);
+    m_BackRightDrive = new CANSparkMax(6, MotorType.kBrushless);
 
     try {
       ahrs = new AHRS(SPI.Port.kMXP);
@@ -229,9 +228,9 @@ public class Robot extends TimedRobot {
 
     // Initialize Custom Classes
     m_drive = new SwerveDrive(m_FrontLeftSteering, m_FrontRightSteering, m_BackLeftSteering, m_BackRightSteering,
-        m_FrontLeftDrive, m_FrontRightDrive, m_BackLeftDrive, m_BackRightDrive);
+        m_FrontLeftDrive, m_FrontRightDrive, m_BackLeftDrive, m_BackRightDrive, ahrs);
 
-    m_SubSystems = new SubSystems(m_armRaise, m_armLower, m_lowerIntakeRoller, m_topIntakeRoller, m_hatcherGrab, m_hatcherExtend, m_rearClimb);
+    m_SubSystems = new SubSystems(m_hatcherGrab, m_hatcherExtend);
 
     // Get shuffleboard tab
     SwerveTab.add("Front Left Swerve Angle Gyro", frontLeftGyroAdapter).withProperties(Map.of("Starting angle", 0))
@@ -242,7 +241,6 @@ public class Robot extends TimedRobot {
         .withPosition(3, 5).withSize(5, 5);
     SwerveTab.add("Back Right Swerve Angle Gyro", backRightGyroAdapter).withProperties(Map.of("Starting angle", 0))
         .withPosition(9, 5).withSize(5, 5);
-
 
   }
 
@@ -332,7 +330,7 @@ public class Robot extends TimedRobot {
       fieldCentric = true;
     } catch (Exception e) {
       DriverStation.reportError("Couldn't recieve gyro angle:" + e, true);
-      DriverStation.reportError("Moving to robotCentric Controlls", true);
+      DriverStation.reportError("Moving to robotCentric Controls", true);
       gyroAngle = 0;
     }
 
@@ -350,11 +348,14 @@ public class Robot extends TimedRobot {
       fieldCentric = false;
     }
     if (m_joystickRight.getRawButton(1)) {
-      m_drive.defensePosition();
+        Vision.setDriverMode(false);
+        Vision.setPipeline(0);
+        if(!Vision.isLinedUp(1, 1) && Vision.getIsValid())
+        {
+            m_drive.drive(Vision.getTurnValue(), Vision.getDriveValue(), Vision.getStrafeValue(), false);
+        }
     } else {
-      m_drive.drive(rotateClockwise, forward, strafe, wheelBase, trackWidth, fieldCentric, gyroAngle,
-          m_FrontLeftSteering.getSelectedSensorPosition(), m_FrontRightSteering.getSelectedSensorPosition(),
-          m_BackLeftSteering.getSelectedSensorPosition(), m_BackRightSteering.getSelectedSensorPosition());
+      m_drive.drive(rotateClockwise, forward, strafe, fieldCentric);
     }
 
     // using a Gyro Widget on the Shuffleboard, have to convert our angle 180 ->
@@ -373,7 +374,7 @@ public class Robot extends TimedRobot {
 
     //#region Subsystem Controls
     // toggle the hatch extension
-    if(m_gamepad.getRawButtonReleased(5)) //TODO: Fix the button number
+    if(m_gamepad.getRawButtonReleased(5))
     {
         if(m_SubSystems.g_hatcherExtended)
         { m_SubSystems.subsystemsStateManager("hatchIntake", "Retract"); }
@@ -382,7 +383,7 @@ public class Robot extends TimedRobot {
     }
 
     // toggle the hatch grabbing
-    if(m_gamepad.getRawButtonReleased(6)) //TODO: Fix the button number
+    if(m_gamepad.getRawButtonReleased(6))
     {
         if(m_SubSystems.g_hatcherGrabbing)
         { m_SubSystems.subsystemsStateManager("hatchIntake", "Release"); }
@@ -390,37 +391,9 @@ public class Robot extends TimedRobot {
         { m_SubSystems.subsystemsStateManager("hatchIntake", "Grab"); }
     }
 
-    // Manually raise and lower the cargo arm
-    if(m_gamepad.getRawAxis(1) > 0.05) //TODO: Fix the axis number to be left joystick
-    {
-        m_SubSystems.subsystemsStateManager("cargoArm", "manuallyRaise", m_gamepad.getRawAxis(1)); //TODO: Fix the axis number to be left joystick
-    }
-    else if (m_gamepad.getRawAxis(1) < -0.05)
-    {
-        m_SubSystems.subsystemsStateManager("cargoArm", "manuallyLower", m_gamepad.getRawAxis(1)); //TODO: Fix the axis number to be left joystick
-    }
-    else
-    {
-        m_SubSystems.subsystemsStateManager("cargoArm", "stop");
-    }
-
-    // Intake and outake cargo
-    if(m_gamepad.getRawAxis(5) > 0.05) //TODO: Fix the axis number for the right trigger
-    {
-        m_SubSystems.subsystemsStateManager("cargoIntake", "Out");
-    }
-    else if (m_gamepad.getRawAxis(6) > 0.05) //TODO: Fix the axis number for the left trigger
-    {
-        m_SubSystems.subsystemsStateManager("cargoIntake", "In");
-    }
-    else
-    {
-        m_SubSystems.subsystemsStateManager("cargoIntake", "Hold");
-    }
-    //#endregion
-
     // update the robot physical state to match all the variables
     m_SubSystems.updatePhysicalState();
+    //#endregion
 }
 
   /**

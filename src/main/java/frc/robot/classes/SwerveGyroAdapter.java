@@ -30,4 +30,9 @@ public class SwerveGyroAdapter extends GyroBase {
     public double getRate() {
         return 0;
     }
+
+    public void close() {
+        
+    }
+
 }

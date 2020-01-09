@@ -24,113 +24,110 @@ public class SubSystems {
 
     /**
      * This initializes all of the motors and base settings for the robot subsystems
+     * 
      * @param ClimbFront The motor for the Talon front climber
-     * @param ClimbBack The motor for the Talon back climber
+     * @param ClimbBack  The motor for the Talon back climber
      * @param ClimbDrive The Talon drive motor on the climber
-     * @param Lift The CANSparkMax Lift Motor
-     * @param Intake The intake motor
-     * @param Hatcher The solenoid for the Hatcher system
+     * @param Lift       The CANSparkMax Lift Motor
+     * @param Intake     The intake motor
+     * @param Hatcher    The solenoid for the Hatcher system
      */
-    public SubSystems(Solenoid HatcherGrab, Solenoid HatcherExtend)
-    {
+    public SubSystems(Solenoid HatcherGrab, Solenoid HatcherExtend) {
         m_hatcherGrab = HatcherGrab;
         m_hatcherExtend = HatcherExtend;
     }
 
-    
-
-    //#region State Managers
-    public void subsystemsStateManager(String systemInput, String stateInput)
-    {
+    // #region State Managers
+    public void subsystemsStateManager(String systemInput, String stateInput) {
         subsystemsStateManager(systemInput, stateInput, null);
     }
 
-    public void subsystemsStateManager(String systemInput, String stateInput, Double speed)
-    {
+    public void subsystemsStateManager(String systemInput, String stateInput, Double speed) {
         switch (systemInput) {
-            case "hatchIntake":
-                switch (stateInput) {
-                    case "Extend":
-                        hatchMechanismStateManager("Extend");
-                        break;
-
-                    case "Retract":
-                        hatchMechanismStateManager("Retract");
-                
-                    case "Grab":
-                        hatchMechanismStateManager("Grab");
-
-                    case "Release":
-                        hatchMechanismStateManager("Release");
-                    
-                    default:
-                        printError("No state found - " + stateInput + " - for Hatch intake in subsystems manager.");
-                        break;
-                }
-                break;
-            default:
-                printError("There is no SubSystem by that name.");
-                break;
-        }
-    }
-
-    public void hatchMechanismStateManager(String input)
-    {
-        switch (input) {
+        case "hatchIntake":
+            switch (stateInput) {
             case "Extend":
-                hatcherExtend();
+                hatchMechanismStateManager("Extend");
                 break;
 
             case "Retract":
-                hatcherRetract();
-                break;
-                
+                hatchMechanismStateManager("Retract");
+
             case "Grab":
-                hatcherGrab();
-                break;
-                
+                hatchMechanismStateManager("Grab");
+
             case "Release":
-                hatcherRelease();
-                break;
+                hatchMechanismStateManager("Release");
 
             default:
-                printError("Illegal value for hatchMechanismStateManager - " + input);
-                hatcherRelease();
-                hatcherRetract();
+                printError("No state found - " + stateInput + " - for Hatch intake in subsystems manager.");
                 break;
+            }
+            break;
+        default:
+            printError("There is no SubSystem by that name.");
+            break;
         }
     }
 
-    //#region Hatch Panel Actions
-    public void hatcherExtend()
-    {
+    public void hatchMechanismStateManager(String input) {
+        switch (input) {
+        case "Extend":
+            hatcherExtend();
+            break;
+
+        case "Retract":
+            hatcherRetract();
+            break;
+
+        case "Grab":
+            hatcherGrab();
+            break;
+
+        case "Release":
+            hatcherRelease();
+            break;
+
+        default:
+            printError("Illegal value for hatchMechanismStateManager - " + input);
+            hatcherRelease();
+            hatcherRetract();
+            break;
+        }
+    }
+
+    // #region Hatch Panel Actions
+    public void hatcherExtend() {
         g_hatcherExtended = true;
     }
 
-    public void hatcherRetract()
-    {
+    public void hatcherRetract() {
         g_hatcherExtended = false;
     }
 
-    public void hatcherGrab()
-    {
+    public void hatcherGrab() {
         g_hatcherGrabbing = true;
     }
 
-    public void hatcherRelease()
-    {
+    public void hatcherRelease() {
         g_hatcherGrabbing = false;
     }
-    //#endregion
+    // #endregion
 
-    public void updatePhysicalState()
-    {
-        if(g_hatcherExtended) { m_hatcherExtend.set(true); } else { m_hatcherExtend.set(false); }
-        if(g_hatcherGrabbing) { m_hatcherGrab.set(true);   } else { m_hatcherGrab.set(false);   }
+    public void updatePhysicalState() {
+        if (g_hatcherExtended) {
+            m_hatcherExtend.set(true);
+        } else {
+            m_hatcherExtend.set(false);
+        }
+        if (g_hatcherGrabbing) {
+            m_hatcherGrab.set(true);
+        } else {
+            m_hatcherGrab.set(false);
+        }
     }
 
-    public void printError(String error)
-    {
+    public void printError(String error) {
         DriverStation.reportError(error, false);
     }
 }
